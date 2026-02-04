@@ -1,3 +1,13 @@
+<?php
+session_start();
+include '../config.php';
+
+// Check if user is logged in as admin
+if(!isset($_SESSION['usermail'])) {
+    header("Location: ../index.php");
+    exit();
+}
+?>
 <html>
 
 <head>

@@ -12,6 +12,95 @@ function prepareAndExecute($conn, $sql, $params)
     $stmt->execute();
     return $stmt;
 }
+
+// Handle User Login
+$user_login_error = '';
+if (isset($_POST['user_login_submit'])) {
+    if (empty($_POST['Email']) || empty($_POST['Password'])) {
+        $user_login_error = 'Email and password are required';
+    } else {
+        $email = $_POST['Email'];
+        $password = $_POST['Password'];
+        $sql = "SELECT * FROM signup WHERE Email = ? AND Password = BINARY ?";
+        $stmt = prepareAndExecute($conn, $sql, [$email, $password]);
+        $result = $stmt->get_result();
+
+        if ($result->num_rows > 0) {
+            $_SESSION['usermail'] = $email;
+            header("Location: home.php");
+            exit();
+        } else {
+            $user_login_error = 'Invalid email or password';
+        }
+    }
+}
+
+// Handle Employee Login
+$emp_login_error = '';
+if (isset($_POST['Emp_login_submit'])) {
+    if (empty($_POST['Emp_Email']) || empty($_POST['Emp_Password'])) {
+        $emp_login_error = 'Email and password are required';
+    } else {
+        $email = $_POST['Emp_Email'];
+        $password = $_POST['Emp_Password'];
+        $sql = "SELECT * FROM emp_login WHERE Emp_Email = ? AND Emp_Password = BINARY ?";
+        $stmt = prepareAndExecute($conn, $sql, [$email, $password]);
+        $result = $stmt->get_result();
+
+        if ($result->num_rows > 0) {
+            $_SESSION['usermail'] = $email;
+            header("Location: admin/admin.php");
+            exit();
+        } else {
+            $emp_login_error = 'Invalid email or password';
+        }
+    }
+}
+
+// Handle User Signup
+$signup_error = '';
+if (isset($_POST['user_signup_submit'])) {
+    $username = $_POST['Username'];
+    $email = $_POST['Email'];
+    $password = $_POST['Password'];
+    $cpassword = $_POST['CPassword'];
+
+    if ($username == "" || $email == "" || $password == "") {
+        $signup_error = 'Fill the proper details';
+    } elseif ($password != $cpassword) {
+        $signup_error = 'Password does not match';
+    } else {
+        $sql_check = "SELECT * FROM signup WHERE Email = ?";
+        $stmt_check = prepareAndExecute($conn, $sql_check, [$email]);
+        $result = $stmt_check->get_result();
+
+        if ($result->num_rows > 0) {
+            $signup_error = 'Email already exists';
+        } else {
+            $sql_insert = "INSERT INTO signup (Username, Email, Password) VALUES (?, ?, ?)";
+            $stmt_insert = prepareAndExecute($conn, $sql_insert, [$username, $email, $password]);
+
+            if ($stmt_insert->affected_rows > 0) {
+                $_SESSION['usermail'] = $email;
+                header("Location: home.php");
+                exit();
+            } else {
+                $signup_error = 'Something went wrong';
+            }
+        }
+    }
+}
+
+
+$login_error = '';
+if (isset($_POST['user_login_submit']) && !isset($_SESSION['usermail'])) {
+    $login_error = $user_login_error;
+}
+
+$emp_login_error = '';
+if (isset($_POST['Emp_login_submit']) && !isset($_SESSION['usermail'])) {
+    $emp_login_error = $emp_login_error;
+}
 ?>
 
 <!DOCTYPE html>
@@ -68,34 +157,16 @@ function prepareAndExecute($conn, $sql, $params)
                 </div>
 
                 <!-- User Login -->
-                <?php
-                if (isset($_POST['user_login_submit'])) {
-                    $email = $_POST['Email'];
-                    $password = $_POST['Password'];
-                    $sql = "SELECT * FROM signup WHERE Email = ? AND Password = BINARY ?";
-                    $stmt = prepareAndExecute($conn, $sql, [$email, $password]);
-                    $result = $stmt->get_result();
-
-                    if ($result->num_rows > 0) {
-                        $_SESSION['usermail'] = $email;
-                        header("Location: home.php");
-                        exit();
-                    } else {
-                        echo "<script>swal({ title: 'Something went wrong', icon: 'error', });</script>";
-                    }
-                }
-                ?>
                 <form class="user_login authsection active" id="userlogin" action="" method="POST">
+                    <?php if($user_login_error): ?>
+                        <div class="alert alert-danger" role="alert"><?php echo $user_login_error; ?></div>
+                    <?php endif; ?>
                     <div class="form-floating">
-                        <input type="text" class="form-control" name="Username" placeholder=" ">
-                        <label for="Username">Username</label>
-                    </div>
-                    <div class="form-floating">
-                        <input type="email" class="form-control" name="Email" placeholder=" ">
+                        <input type="email" class="form-control" name="Email" placeholder=" " required>
                         <label for="Email">Email</label>
                     </div>
                     <div class="form-floating">
-                        <input type="password" class="form-control" name="Password" placeholder=" ">
+                        <input type="password" class="form-control" name="Password" placeholder=" " required>
                         <label for="Password">Password</label>
                     </div>
                     <button type="submit" name="user_login_submit" class="auth_btn">Log in</button>
@@ -105,30 +176,16 @@ function prepareAndExecute($conn, $sql, $params)
                 </form>
 
                 <!-- Employee Login -->
-                <?php
-                if (isset($_POST['Emp_login_submit'])) {
-                    $email = $_POST['Emp_Email'];
-                    $password = $_POST['Emp_Password'];
-                    $sql = "SELECT * FROM emp_login WHERE Emp_Email = ? AND Emp_Password = BINARY ?";
-                    $stmt = prepareAndExecute($conn, $sql, [$email, $password]);
-                    $result = $stmt->get_result();
-
-                    if ($result->num_rows > 0) {
-                        $_SESSION['usermail'] = $email;
-                        header("Location: admin/admin.php");
-                        exit();
-                    } else {
-                        echo "<script>swal({ title: 'Something went wrong', icon: 'error', });</script>";
-                    }
-                }
-                ?>
                 <form class="employee_login authsection" id="employeelogin" action="" method="POST">
+                    <?php if($emp_login_error): ?>
+                        <div class="alert alert-danger" role="alert"><?php echo $emp_login_error; ?></div>
+                    <?php endif; ?>
                     <div class="form-floating">
-                        <input type="email" class="form-control" name="Emp_Email" placeholder=" ">
+                        <input type="email" class="form-control" name="Emp_Email" placeholder=" " required>
                         <label for="floatingInput">Email</label>
                     </div>
                     <div class="form-floating">
-                        <input type="password" class="form-control" name="Emp_Password" placeholder=" ">
+                        <input type="password" class="form-control" name="Emp_Password" placeholder=" " required>
                         <label for="floatingPassword">Password</label>
                     </div>
                     <button type="submit" name="Emp_login_submit" class="auth_btn">Log in</button>
@@ -136,58 +193,26 @@ function prepareAndExecute($conn, $sql, $params)
             </div>
 
             <!-- Sign Up -->
-            <?php
-            if (isset($_POST['user_signup_submit'])) {
-                $username = $_POST['Username'];
-                $email = $_POST['Email'];
-                $password = $_POST['Password'];
-                $cpassword = $_POST['CPassword'];
-
-                if ($username == "" || $email == "" || $password == "") {
-                    echo "<script>swal({ title: 'Fill the proper details', icon: 'error', });</script>";
-                } else {
-                    if ($password == $cpassword) {
-                        $sql_check = "SELECT * FROM signup WHERE Email = ?";
-                        $stmt_check = prepareAndExecute($conn, $sql_check, [$email]);
-                        $result = $stmt_check->get_result();
-
-                        if ($result->num_rows > 0) {
-                            echo "<script>swal({ title: 'Email already exists', icon: 'error', });</script>";
-                        } else {
-                            $sql_insert = "INSERT INTO signup (Username, Email, Password) VALUES (?, ?, ?)";
-                            $stmt_insert = prepareAndExecute($conn, $sql_insert, [$username, $email, $password]);
-
-                            if ($stmt_insert->affected_rows > 0) {
-                                $_SESSION['usermail'] = $email;
-                                header("Location: home.php");
-                                exit();
-                            } else {
-                                echo "<script>swal({ title: 'Something went wrong', icon: 'error', });</script>";
-                            }
-                        }
-                    } else {
-                        echo "<script>swal({ title: 'Password does not match', icon: 'error', });</script>";
-                    }
-                }
-            }
-            ?>
             <div id="sign_up">
                 <h2>Sign Up</h2>
                 <form class="user_signup" id="usersignup" action="" method="POST">
+                    <?php if($signup_error): ?>
+                        <div class="alert alert-danger" role="alert"><?php echo $signup_error; ?></div>
+                    <?php endif; ?>
                     <div class="form-floating">
-                        <input type="text" class="form-control" name="Username" placeholder=" ">
+                        <input type="text" class="form-control" name="Username" placeholder=" " required>
                         <label for="Username">Username</label>
                     </div>
                     <div class="form-floating">
-                        <input type="email" class="form-control" name="Email" placeholder=" ">
+                        <input type="email" class="form-control" name="Email" placeholder=" " required>
                         <label for="Email">Email</label>
                     </div>
                     <div class="form-floating">
-                        <input type="password" class="form-control" name="Password" placeholder=" ">
+                        <input type="password" class="form-control" name="Password" placeholder=" " required>
                         <label for="Password">Password</label>
                     </div>
                     <div class="form-floating">
-                        <input type="password" class="form-control" name="CPassword" placeholder=" ">
+                        <input type="password" class="form-control" name="CPassword" placeholder=" " required>
                         <label for="CPassword">Confirm Password</label>
                     </div>
                     <button type="submit" name="user_signup_submit" class="auth_btn">Sign up</button>
@@ -196,8 +221,6 @@ function prepareAndExecute($conn, $sql, $params)
                     </div>
                 </form>
             </div>
-        </div>
-    </section>
 
     <script src="./javascript/index.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>

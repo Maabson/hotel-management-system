@@ -6,10 +6,9 @@ session_start();
 // page redirect
 $usermail="";
 $usermail=$_SESSION['usermail'];
-if($usermail == true){
-
-}else{
-  header("location: index.php");
+if(!$usermail){
+  header("Location: index.php");
+  exit();
 }
 
 ?>
