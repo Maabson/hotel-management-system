@@ -21,11 +21,11 @@ while($row=mysqli_fetch_array($re))
     $Phone = $row['Phone'];
     $RoomType = $row['RoomType'];
     $Bed = $row['Bed'];
-    $NoofRoom = $row['NoofRoom'];
+    $NoofRoom = (int)$row['NoofRoom'];
     $Meal = $row['Meal'];
     $cin = $row['cin'];
     $cout = $row['cout'];
-    $noofday = $row['nodays'];
+    $noofday = (int)$row['nodays'];
     $stat = $row['stat'];
 }
 
