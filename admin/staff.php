@@ -47,7 +47,7 @@ if(!isset($_SESSION['usermail'])) {
                 <option value="weighter">weighter</option>
             </select>
 
-            <button type="submit" class="btn btn-success" name="addstaff">Add Room</button>
+            <button type="submit" class="btn btn-success" name="addstaff">Add Staff</button>
         </form>
 
         <?php
